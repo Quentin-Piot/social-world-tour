@@ -1,7 +1,7 @@
 {% extends "layout.html.tera" %} {% block content %}
 <div class="row">
   <h4>New Post</h4>
-  <form action="/" method="post">
+  <form action="/posts" method="post">
     <div class="twelve columns">
       <input
         type="text"
@@ -24,7 +24,7 @@
     </div>
     <div class="twelve columns">
       <div class="two columns">
-        <a href="/">
+        <a href="/posts">
           <input type="button" value="cancel" />
         </a>
       </div>

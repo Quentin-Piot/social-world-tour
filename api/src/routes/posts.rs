@@ -5,12 +5,12 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use tower_cookies::Cookies;
 
-use crate::AppState;
+use crate::{AppState, FlashData};
 use entity::posts;
-use social_world_tour_core::{Mutation as MutationCore, Query as QueryCore};
+use social_world_tour_core::posts::{Mutation as MutationCore, Query as QueryCore};
 
 use crate::flash::{get_flash_cookie, post_response, PostResponse};
 
@@ -20,10 +20,13 @@ struct Params {
     posts_per_page: Option<u64>,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
-struct FlashData {
-    kind: String,
-    message: String,
+pub fn router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(list_posts).post(create_post))
+        .route("/posts", get(list_posts).post(create_post))
+        .route("/posts/:id", get(edit_post).post(update_post))
+        .route("/posts/new", get(new_post))
+        .route("/posts/delete/:id", post(delete_post))
 }
 
 async fn list_posts(
@@ -140,14 +143,4 @@ async fn delete_post(
     };
 
     Ok(post_response(&mut cookies, data))
-}
-
-pub fn router() -> Router<AppState> {
-    // By having each module responsible for setting up its own routing,
-    // it makes the root module a lot cleaner.
-    Router::new()
-        .route("/", get(list_posts).post(create_post))
-        .route("/:id", get(edit_post).post(update_post))
-        .route("/new", get(new_post))
-        .route("/delete/:id", post(delete_post))
 }

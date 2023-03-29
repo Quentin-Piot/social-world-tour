@@ -44,7 +44,7 @@
   </table>
 
   <div class="twelve columns">
-    <a href="/new">
+    <a href="/posts/new">
       <input type="button" value="add post" />
     </a>
   </div>

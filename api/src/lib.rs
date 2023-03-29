@@ -5,6 +5,7 @@ use axum::{Router, Server};
 use routes::{posts as posts_routes, users as users_routes};
 
 use migration::{Migrator, MigratorTrait};
+use serde::{Deserialize, Serialize};
 use social_world_tour_core::sea_orm::{Database, DatabaseConnection};
 use std::str::FromStr;
 use std::{env, net::SocketAddr};
@@ -16,6 +17,12 @@ use tower_http::services::ServeDir;
 pub struct AppState {
     templates: Tera,
     conn: DatabaseConnection,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct FlashData {
+    kind: String,
+    message: String,
 }
 
 #[tokio::main]
