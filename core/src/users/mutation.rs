@@ -32,6 +32,7 @@ impl Mutation {
             id: user.id,
             username: Set(form_data.username.to_owned()),
             email: Set(form_data.email.to_owned()),
+            created_at: user.created_at,
         }
         .update(db)
         .await

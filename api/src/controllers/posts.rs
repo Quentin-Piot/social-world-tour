@@ -3,7 +3,7 @@ use axum::{
     http::StatusCode,
     response::Html,
     routing::{get, post},
-    Router,
+    Json, Router,
 };
 use serde::Deserialize;
 use tower_cookies::Cookies;
@@ -72,7 +72,7 @@ async fn new_post(state: State<AppState>) -> Result<Html<String>, (StatusCode, &
 async fn create_post(
     state: State<AppState>,
     mut cookies: Cookies,
-    form: Form<posts::Model>,
+    form: Json<posts::Model>,
 ) -> Result<PostResponse, (StatusCode, &'static str)> {
     let form = form.0;
 

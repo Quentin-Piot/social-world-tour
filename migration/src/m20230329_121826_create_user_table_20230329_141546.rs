@@ -20,6 +20,7 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(Users::Username).string().not_null())
                     .col(ColumnDef::new(Users::Email).string().not_null())
+                    .col(ColumnDef::new(Users::CreatedAt).timestamp().not_null())
                     .to_owned(),
             )
             .await
@@ -39,4 +40,5 @@ enum Users {
     Id,
     Username,
     Email,
+    CreatedAt,
 }
