@@ -1,18 +1,26 @@
-![screenshot](Screenshot.png)
+# 🦀 Chat application 🦀
 
-# Axum with SeaORM example app
+[![MIT/Apache 2.0](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)](https://github.com/bevyengine/bevy#license)
 
-1. Modify the `DATABASE_URL` var in `.env` to point to your chosen database
 
-1. Turn on the appropriate database feature for your chosen db in `core/Cargo.toml` (the `"sqlx-postgres",` line)
 
-1. Execute `cargo run` to start the server
+## Goals
 
-1. Visit [localhost:8000](http://localhost:8000) in browser
+* Improve skills in Rust
+* CI/CD
+* Develop a safe and performant polarApp kind of application
+* Cross platform : Windows, Mac, Linux and Web
 
-Run mock test on the core logic crate:
+## Potentials developments
 
-```bash
-cd core
-cargo test --features mock
-```
+* Websocket
+
+## Technologies
+
+* Axum
+* Tokio
+* Sea-ORM
+
+## Run the server
+
+`cargo run`
