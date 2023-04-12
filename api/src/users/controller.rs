@@ -1,6 +1,5 @@
 use axum::{
-    extract::{Form, Path, State},
-    routing::delete,
+    extract::{Path, State},
     routing::post,
     Json, Router,
 };
@@ -8,8 +7,10 @@ use chrono::Utc;
 
 use crate::users::dto::{CreateUserInput, UpdateUserInput};
 use crate::users::errors::UserError;
-use crate::AppState;
+
+use crate::server::AppState;
 use entity::users;
+use social_world_tour_core::sea_orm::DbErr;
 use social_world_tour_core::users::Mutation as MutationCore;
 
 pub fn router() -> Router<AppState> {
@@ -24,17 +25,17 @@ async fn create_user(
 ) -> Result<Json<String>, UserError> {
     let create_user_input = body.0;
 
-    let user_model = users::PartialModel {
-        username: Some(create_user_input.username),
-        email: Some(create_user_input.email),
-        created_at: Some(Utc::now().naive_local()),
+    let user_model = users::Model {
+        username: create_user_input.username,
+        email: create_user_input.email,
+        created_at: Utc::now().naive_local(),
         ..Default::default()
     };
 
     let result = MutationCore::create_user(&state.conn, user_model).await;
     match result {
         Ok(_) => Ok(Json("User created".to_owned())),
-        Err(_) => Err(UserError::InternalServerError),
+        Err(err) => Err(UserError::InternalServerError),
     }
 }
 
@@ -44,16 +45,21 @@ async fn update_user(
     body: Json<UpdateUserInput>,
 ) -> Result<Json<String>, UserError> {
     let update_user_input = body.0;
+
     let user_model = users::PartialModel {
         username: update_user_input.username,
         ..Default::default()
     };
 
     let result = MutationCore::update_user_by_id(&state.conn, id, user_model).await;
-    match result {
-        Ok(_) => Ok(Json("User successfully updated".to_owned())),
-        Err(_) => Err(UserError::InternalServerError),
+
+    if let Err(err) = result {
+        return match err {
+            DbErr::RecordNotFound(_) => Err(UserError::UserDoesNotExist),
+            _ => Err(UserError::InternalServerError),
+        };
     }
+    Ok(Json("User successfully updated".to_owned()))
 }
 
 async fn delete_user(

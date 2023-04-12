@@ -1,17 +1,19 @@
-use crate::{users::controller::router as user_router, AppState};
+use crate::health::controller::router as health_router;
+use crate::users::controller::router as user_router;
 
-use axum::extract::Host;
+use axum::extract::{FromRef, Host, State};
 use axum::handler::HandlerWithoutStateExt;
 use axum::http::{StatusCode, Uri};
-use axum::response::Redirect;
+use axum::response::{IntoResponse, Redirect};
 use axum::{BoxError, Router};
 use axum_server::tls_rustls::RustlsConfig;
 use migration::{Migrator, MigratorTrait};
-use social_world_tour_core::sea_orm::{Database, DbErr};
+
+use async_session::{MemoryStore, Session, SessionStore};
+
+use social_world_tour_core::sea_orm::{Database, DatabaseConnection};
 use std::path::PathBuf;
 use std::{env, net::SocketAddr};
-use tera::Tera;
-use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -21,7 +23,19 @@ struct Ports {
     https: u16,
 }
 
-pub async fn start_server() -> anyhow::Result<()> {
+#[derive(Clone)]
+pub struct AppState {
+    pub conn: DatabaseConnection,
+    store: MemoryStore,
+}
+
+impl FromRef<AppState> for MemoryStore {
+    fn from_ref(state: &AppState) -> Self {
+        state.store.clone()
+    }
+}
+
+pub async fn start_server() -> Result<(), BoxError> {
     env::set_var("RUST_LOG", "debug");
     tracing_subscriber::registry()
         .with(
@@ -47,17 +61,15 @@ pub async fn start_server() -> anyhow::Result<()> {
         .expect("Database connection failed");
     Migrator::up(&conn, None).await.unwrap();
 
-    let templates = Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/templates/**/*"))
-        .expect("Tera initialization failed");
+    let store = MemoryStore::new();
 
-    let state = AppState { templates, conn };
+    let state = AppState { conn, store };
 
     let app = api_router()
         .nest_service(
             "/static",
             ServeDir::new(concat!(env!("CARGO_MANIFEST_DIR"), "/static")),
         )
-        .layer(CookieManagerLayer::new())
         .with_state(state);
     let config = RustlsConfig::from_pem_file(
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -80,7 +92,7 @@ pub async fn start_server() -> anyhow::Result<()> {
 }
 
 fn api_router() -> Router<AppState> {
-    user_router()
+    user_router().merge(health_router())
 }
 
 async fn redirect_http_to_https(ports: Ports) {

@@ -13,7 +13,7 @@ impl IntoResponse for UserError {
         let (status, err_msg) = match self {
             Self::InternalServerError => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                "An internal server error occurred",
+                "an internal server error occured",
             ),
             Self::UserDoesNotExist => (StatusCode::UNAUTHORIZED, "User does not exist"),
             Self::UserAlreadyExits => (StatusCode::BAD_REQUEST, "User already exists"),

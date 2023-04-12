@@ -1,7 +1,7 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize, Default)]
 #[sea_orm(table_name = "users")]
 pub struct Model {
     #[sea_orm(primary_key)]
@@ -15,7 +15,7 @@ pub struct Model {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct PartialModel {
-    pub id: Option<i32>,
+    pub id: i32,
     pub username: Option<String>,
     pub email: Option<String>,
     pub created_at: Option<DateTime>,

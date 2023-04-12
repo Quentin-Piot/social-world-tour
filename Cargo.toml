@@ -10,3 +10,6 @@ members = [".", "api", "core", "entity", "migration"]
 
 [dependencies]
 social-world-tour-api = { path = "api" }
+
+[profile.dev.package.sqlx-macros]
+opt-level = 3
