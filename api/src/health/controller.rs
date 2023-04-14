@@ -15,8 +15,8 @@ pub fn router() -> Router<AppState> {
         .route("/healthchecker", get(health_checker))
 }
 
-async fn health_checker(state: State<AppState>) -> Result<Json<Value>, AppError> {
-    const MESSAGE: &str = "How to Implement Google OAuth2 in Rust";
+async fn health_checker() -> Result<Json<Value>, AppError> {
+    const MESSAGE: &str = "Ok";
 
     Ok(Json(json!({"status": "success", "message": MESSAGE})))
 }

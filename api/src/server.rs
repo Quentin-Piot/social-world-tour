@@ -1,17 +1,20 @@
+use crate::auth::controller::router as auth_router;
 use crate::health::controller::router as health_router;
 use crate::users::controller::router as user_router;
 
-use axum::extract::{FromRef, Host, State};
+use axum::extract::{FromRef, Host};
 use axum::handler::HandlerWithoutStateExt;
 use axum::http::{StatusCode, Uri};
-use axum::response::{IntoResponse, Redirect};
+use axum::response::Redirect;
 use axum::{BoxError, Router};
 use axum_server::tls_rustls::RustlsConfig;
-use migration::{Migrator, MigratorTrait};
 
-use async_session::{MemoryStore, Session, SessionStore};
+use migration::{Migrator, MigratorTrait};
+use oauth2::basic::BasicClient;
 
 use social_world_tour_core::sea_orm::{Database, DatabaseConnection};
+
+use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 use std::path::PathBuf;
 use std::{env, net::SocketAddr};
 use tower_http::services::ServeDir;
@@ -26,12 +29,12 @@ struct Ports {
 #[derive(Clone)]
 pub struct AppState {
     pub conn: DatabaseConnection,
-    store: MemoryStore,
+    pub oauth_client: BasicClient,
 }
 
-impl FromRef<AppState> for MemoryStore {
+impl FromRef<AppState> for BasicClient {
     fn from_ref(state: &AppState) -> Self {
-        state.store.clone()
+        state.oauth_client.clone()
     }
 }
 
@@ -61,9 +64,9 @@ pub async fn start_server() -> Result<(), BoxError> {
         .expect("Database connection failed");
     Migrator::up(&conn, None).await.unwrap();
 
-    let store = MemoryStore::new();
+    let oauth_client = oauth_client();
 
-    let state = AppState { conn, store };
+    let state = AppState { conn, oauth_client };
 
     let app = api_router()
         .nest_service(
@@ -92,7 +95,7 @@ pub async fn start_server() -> Result<(), BoxError> {
 }
 
 fn api_router() -> Router<AppState> {
-    user_router().merge(health_router())
+    auth_router().merge(user_router().merge(health_router()))
 }
 
 async fn redirect_http_to_https(ports: Ports) {
@@ -128,4 +131,20 @@ async fn redirect_http_to_https(ports: Ports) {
         .serve(redirect.into_make_service())
         .await
         .unwrap();
+}
+
+fn oauth_client() -> BasicClient {
+    let client_id = env::var("CLIENT_ID").expect("Missing CLIENT_ID!");
+    let client_secret = env::var("CLIENT_SECRET").expect("Missing CLIENT_SECRET!");
+    let redirect_url = env::var("REDIRECT_URL").expect("Missing REDIRECT_URL!");
+    let auth_url = env::var("AUTH_URL").expect("Missing AUTH_URL!");
+    let token_url = env::var("TOKEN_URL").expect("Missing TOKEN_URL!");
+
+    BasicClient::new(
+        ClientId::new(client_id),
+        Some(ClientSecret::new(client_secret)),
+        AuthUrl::new(auth_url).unwrap(),
+        Some(TokenUrl::new(token_url).unwrap()),
+    )
+    .set_redirect_uri(RedirectUrl::new(redirect_url).unwrap())
 }
