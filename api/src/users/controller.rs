@@ -1,6 +1,6 @@
 use axum::{
     extract::{Path, State},
-    routing::post,
+    routing::{post,delete},
     Json, Router,
 };
 use chrono::Utc;
@@ -16,7 +16,7 @@ use social_world_tour_core::users::Mutation as MutationCore;
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/users", post(create_user))
-        .route("/users/:id", post(update_user).delete(delete_user))
+        .route("/users/:id", delete(delete_user))
 }
 
 async fn create_user(
@@ -35,32 +35,11 @@ async fn create_user(
     let result = MutationCore::create_user(&state.conn, user_model).await;
     match result {
         Ok(_) => Ok(Json("User created".to_owned())),
-        Err(err) => Err(UserError::InternalServerError),
+        Err(_) => Err(UserError::InternalServerError),
     }
 }
 
-async fn update_user(
-    state: State<AppState>,
-    Path(id): Path<i32>,
-    body: Json<UpdateUserInput>,
-) -> Result<Json<String>, UserError> {
-    let update_user_input = body.0;
 
-    let user_model = users::PartialModel {
-        username: update_user_input.username,
-        ..Default::default()
-    };
-
-    let result = MutationCore::update_user_by_id(&state.conn, id, user_model).await;
-
-    if let Err(err) = result {
-        return match err {
-            DbErr::RecordNotFound(_) => Err(UserError::UserDoesNotExist),
-            _ => Err(UserError::InternalServerError),
-        };
-    }
-    Ok(Json("User successfully updated".to_owned()))
-}
 
 async fn delete_user(
     state: State<AppState>,

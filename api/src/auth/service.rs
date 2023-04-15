@@ -3,11 +3,18 @@ use jsonwebtoken::{encode, DecodingKey, EncodingKey, Header};
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::{AuthorizationCode, TokenResponse};
+use crate::error::AppError;
+
+pub struct GenerateTokenResponse {
+    pub token: String,
+    pub user_data: OAuthUser
+}
+
 
 pub async fn generate_token_from_authorization_code(
     oauth_client: BasicClient,
     authorization_code: String,
-) -> jsonwebtoken::errors::Result<String> {
+) -> Result<GenerateTokenResponse, AppError> {
     let token_result = oauth_client
         .exchange_code(AuthorizationCode::new(authorization_code))
         .request_async(async_http_client)
@@ -26,12 +33,22 @@ pub async fn generate_token_from_authorization_code(
         .await
         .unwrap();
 
+
     let claims = Claims {
-        sub: user_data.email,
-        given_name: user_data.given_name,
+        sub: user_data.email.to_owned(),
+        auth0_sub: user_data.sub.to_owned(),
         // Mandatory expiry time as UTC timestamp
         exp: 2000000000, // May 2033
     };
 
-    encode(&Header::default(), &claims, &KEYS.encoding)
+    let token = encode(&Header::default(), &claims, &KEYS.encoding);
+    if token.is_err() {
+        return Err(AppError::InvalidToken);
+    }
+    let token_response = GenerateTokenResponse {
+        token: token.unwrap(),
+        user_data
+    };
+    Ok(token_response)
+
 }

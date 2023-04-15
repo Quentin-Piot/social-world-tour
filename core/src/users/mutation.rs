@@ -18,24 +18,6 @@ impl Mutation {
         .await
     }
 
-    pub async fn update_user_by_id(
-        db: &DbConn,
-        id: i32,
-        user_input: users::PartialModel,
-    ) -> Result<users::Model, DbErr> {
-        let mut user: users::ActiveModel = Users::find_by_id(id)
-            .one(db)
-            .await?
-            .ok_or(DbErr::RecordNotFound("User not found".to_owned()))
-            .map(Into::into)?;
-
-        if let Some(username) = user_input.username {
-            user.username = Set(username);
-        }
-
-        user.update(db).await
-    }
-
     pub async fn delete_user(db: &DbConn, id: i32) -> Result<DeleteResult, DbErr> {
         let user: users::ActiveModel = Users::find_by_id(id)
             .one(db)

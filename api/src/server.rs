@@ -39,6 +39,8 @@ impl FromRef<AppState> for BasicClient {
 }
 
 pub async fn start_server() -> Result<(), BoxError> {
+    dotenvy::dotenv().ok();
+
     env::set_var("RUST_LOG", "debug");
     tracing_subscriber::registry()
         .with(
@@ -48,7 +50,6 @@ pub async fn start_server() -> Result<(), BoxError> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    dotenvy::dotenv().ok();
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
     let port = env::var("PORT").expect("PORT is not set in .env file");
 

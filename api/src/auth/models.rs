@@ -12,9 +12,9 @@ use once_cell::sync::Lazy;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OAuthUser {
-    pub given_name: String,
-    pub family_name: String,
+    pub given_name: Option<String>,
     pub email: String,
+    pub sub:String,
 }
 
 pub struct Keys {
@@ -39,13 +39,13 @@ pub static KEYS: Lazy<Keys> = Lazy::new(|| {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     pub sub: String,
-    pub given_name: String,
+    pub auth0_sub: String,
     pub exp: usize,
 }
 
 impl Display for Claims {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Email: {}\ngiven_name: {}", self.sub, self.given_name)
+        write!(f, "Email: {}\ngiven_name: {}", self.sub, self.auth0_sub)
     }
 }
 
