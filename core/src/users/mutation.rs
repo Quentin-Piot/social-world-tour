@@ -22,7 +22,7 @@ impl Mutation {
         let user: users::ActiveModel = Users::find_by_id(id)
             .one(db)
             .await?
-            .ok_or(DbErr::Custom("Cannot find user.".to_owned()))
+            .ok_or_else(|| DbErr::Custom("Cannot find user.".to_owned()))
             .map(Into::into)?;
 
         user.delete(db).await

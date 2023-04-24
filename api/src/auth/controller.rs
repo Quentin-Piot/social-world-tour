@@ -11,12 +11,9 @@ use crate::auth::service::generate_token_from_authorization_code;
 use crate::error::AppError;
 use serde::{Deserialize, Serialize};
 use entity::users;
-use social_world_tour_core::sea_orm::DatabaseConnection;
 
 use social_world_tour_core::users::Query as QueryCore;
 use social_world_tour_core::users::Mutation as MutationCore;
-
-use crate::users::dto::CreateUserInput;
 
 
 #[derive(Deserialize)]

@@ -5,7 +5,7 @@ use crate::users::controller::router as user_router;
 use axum::extract::{FromRef, Host};
 use axum::handler::HandlerWithoutStateExt;
 use axum::http::{StatusCode, Uri};
-use axum::response::Redirect;
+use axum::response::{IntoResponse, Redirect};
 use axum::{BoxError, Router};
 use axum_server::tls_rustls::RustlsConfig;
 
@@ -19,6 +19,10 @@ use std::path::PathBuf;
 use std::{env, net::SocketAddr};
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use axum::{
+    routing::get,
+};
+use crate::error::AppError;
 
 #[derive(Clone, Copy)]
 struct Ports {
@@ -96,7 +100,12 @@ pub async fn start_server() -> Result<(), BoxError> {
 }
 
 fn api_router() -> Router<AppState> {
-    auth_router().merge(user_router().merge(health_router()))
+     Router::new()
+        .route("/", get(root)).merge(auth_router().merge(user_router().merge(health_router())))
+}
+
+async fn root() -> &'static str {
+    "Hello, World!"
 }
 
 async fn redirect_http_to_https(ports: Ports) {

@@ -1,9 +1,8 @@
 use axum::{
-    extract::{Path, State},
+    extract::{State},
     routing::get,
     Json, Router,
 };
-use chrono::Utc;
 use serde_json::{json, Value};
 
 use crate::error::AppError;

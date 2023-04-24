@@ -13,7 +13,6 @@ serde_json = "1.0.95"
 tokio = { version = "1.27.0", features = ["full"] }
 tower-http = { version = "0.4.0", features = ["fs"] }
 social-world-tour-core = { path = "../core" }
-tower = "0.4.13"
 dotenvy = "0.15.6"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 entity = { path = "../entity" }
