@@ -1,6 +1,6 @@
-use sea_orm_migration::prelude::*;
 use crate::m20230329_121826_create_user_table::Users;
 use crate::m20233030_121825_create_team_table::Team;
+use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -22,8 +22,18 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(UserTeam::User).integer().not_null())
                     .col(ColumnDef::new(UserTeam::Team).integer().not_null())
-                    .foreign_key(ForeignKeyCreateStatement::new().name("fk_map_user_team_team_id").from(UserTeam::Table, UserTeam::Team).to(Team::Table, Team::Id))
-                    .foreign_key(ForeignKeyCreateStatement::new().name("fk_map_user_team_user_id").from(UserTeam::Table, UserTeam::User).to(Users::Table, Users::Id))
+                    .foreign_key(
+                        ForeignKeyCreateStatement::new()
+                            .name("fk_map_user_team_team_id")
+                            .from(UserTeam::Table, UserTeam::Team)
+                            .to(Team::Table, Team::Id),
+                    )
+                    .foreign_key(
+                        ForeignKeyCreateStatement::new()
+                            .name("fk_map_user_team_user_id")
+                            .from(UserTeam::Table, UserTeam::User)
+                            .to(Users::Table, Users::Id),
+                    )
                     .to_owned(),
             )
             .await

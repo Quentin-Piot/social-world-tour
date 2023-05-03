@@ -14,7 +14,7 @@ use once_cell::sync::Lazy;
 pub struct OAuthUser {
     pub given_name: Option<String>,
     pub email: String,
-    pub sub:String,
+    pub sub: String,
 }
 
 pub struct Keys {

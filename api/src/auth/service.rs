@@ -1,15 +1,14 @@
 use crate::auth::models::{Claims, OAuthUser, KEYS};
+use crate::error::AppError;
 use jsonwebtoken::{encode, DecodingKey, EncodingKey, Header};
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::{AuthorizationCode, TokenResponse};
-use crate::error::AppError;
 
 pub struct GenerateTokenResponse {
     pub token: String,
-    pub user_data: OAuthUser
+    pub user_data: OAuthUser,
 }
-
 
 pub async fn generate_token_from_authorization_code(
     oauth_client: BasicClient,
@@ -33,7 +32,6 @@ pub async fn generate_token_from_authorization_code(
         .await
         .unwrap();
 
-
     let claims = Claims {
         sub: user_data.email.to_owned(),
         auth0_sub: user_data.sub.to_owned(),
@@ -47,8 +45,7 @@ pub async fn generate_token_from_authorization_code(
     }
     let token_response = GenerateTokenResponse {
         token: token.unwrap(),
-        user_data
+        user_data,
     };
     Ok(token_response)
-
 }

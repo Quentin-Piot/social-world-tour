@@ -5,16 +5,16 @@ use axum::{extract::State, routing::get, Json, Router};
 use chrono::Utc;
 use oauth2::basic::BasicClient;
 use oauth2::CsrfToken;
+use std::env;
 
 use crate::auth::models::Claims;
 use crate::auth::service::generate_token_from_authorization_code;
 use crate::error::AppError;
-use serde::{Deserialize, Serialize};
 use entity::users;
+use serde::{Deserialize, Serialize};
 
-use social_world_tour_core::users::Query as QueryCore;
 use social_world_tour_core::users::Mutation as MutationCore;
-
+use social_world_tour_core::users::Query as QueryCore;
 
 #[derive(Deserialize)]
 struct CallbackQuery {
@@ -27,7 +27,10 @@ pub struct AuthBody {
     token_type: String,
 }
 
-
+#[derive(Debug, Serialize)]
+pub struct CallbackUrlBody {
+    callback_url: String,
+}
 
 impl AuthBody {
     fn new(access_token: String) -> Self {
@@ -35,6 +38,12 @@ impl AuthBody {
             access_token,
             token_type: "Bearer".to_string(),
         }
+    }
+}
+
+impl CallbackUrlBody {
+    fn new(callback_url: String) -> Self {
+        Self { callback_url }
     }
 }
 
@@ -51,39 +60,52 @@ async fn protected(claims: Claims) -> Result<String, AppError> {
         claims
     ))
 }
-async fn authorize(State(oauth_client): State<BasicClient>) -> impl IntoResponse {
+async fn authorize(
+    State(oauth_client): State<BasicClient>,
+) -> Result<Json<CallbackUrlBody>, AppError> {
     let (authorize_url, _csrf_state) = oauth_client.authorize_url(CsrfToken::new_random).url();
-    Redirect::to(authorize_url.as_ref())
+    Ok(Json(CallbackUrlBody::new(authorize_url.to_string())))
 }
 
-async fn callback(
-   state: State<AppState>,
-    query: Query<CallbackQuery>,
-) -> Result<Json<AuthBody>, AppError> {
+async fn callback(state: State<AppState>, query: Query<CallbackQuery>) -> impl IntoResponse {
     let callback_query: CallbackQuery = query.0;
-    let token_response = generate_token_from_authorization_code(state.oauth_client.to_owned(), callback_query.code)
-        .await?;
+    let token_response =
+        generate_token_from_authorization_code(state.oauth_client.to_owned(), callback_query.code)
+            .await
+            .expect("Error generating token from authorization code");
+    let frontend_url = env::var("FRONTEND_URL").expect("FRONTEND_URL is not set in .env file");
+
     let user_data = token_response.user_data;
 
-    let user = QueryCore::find_user_by_email(&state.conn, &user_data.email).await.map_err(|_| AppError::InternalServerError)?;
+    let user = QueryCore::find_user_by_email(&state.conn, &user_data.email)
+        .await
+        .expect("Error finding user");
+
     if user.is_none() {
         let given_name = match user_data.given_name {
             Some(name) => name,
-            None=> user_data.email.to_owned()
+            None => user_data.email.to_owned(),
         };
         let user_model = users::Model {
-            email:user_data.email.to_owned(),
-            username:given_name,
+            email: user_data.email.to_owned(),
+            username: given_name,
             created_at: Utc::now().naive_local(),
             ..Default::default()
         };
 
         let created_user = MutationCore::create_user(&state.conn, user_model).await;
         if created_user.is_err() {
-            return Err(AppError::InternalServerError);
+            println!("Error: {:?}", created_user);
+            return Redirect::to(format!("{}", frontend_url).as_str());
         }
     }
 
-
-    Ok(Json(AuthBody::new(token_response.token)))
+    Redirect::to(
+        format!(
+            "{}/auth/callback?token={}",
+            frontend_url,
+            token_response.token.as_str()
+        )
+        .as_str(),
+    )
 }

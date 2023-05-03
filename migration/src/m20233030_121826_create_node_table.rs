@@ -1,6 +1,6 @@
-use sea_orm_migration::prelude::*;
 use crate::m20230329_121826_create_user_table::Users;
 use crate::m20233030_121825_create_team_table::Team;
+use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -25,8 +25,18 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Nodes::Team).integer().not_null())
                     .col(ColumnDef::new(Nodes::CreatedBy).integer().not_null())
                     .col(ColumnDef::new(Nodes::CreatedAt).timestamp().not_null())
-                    .foreign_key(ForeignKeyCreateStatement::new().name("fk_node_team_team__id").from(Nodes::Table, Nodes::Team).to(Team::Table, Team::Id))
-                    .foreign_key(ForeignKeyCreateStatement::new().name("fk_node_create_by_user_id").from(Nodes::Table, Nodes::CreatedBy).to(Users::Table, Users::Id))
+                    .foreign_key(
+                        ForeignKeyCreateStatement::new()
+                            .name("fk_node_team_team__id")
+                            .from(Nodes::Table, Nodes::Team)
+                            .to(Team::Table, Team::Id),
+                    )
+                    .foreign_key(
+                        ForeignKeyCreateStatement::new()
+                            .name("fk_node_create_by_user_id")
+                            .from(Nodes::Table, Nodes::CreatedBy)
+                            .to(Users::Table, Users::Id),
+                    )
                     .to_owned(),
             )
             .await

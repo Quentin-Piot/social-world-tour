@@ -12,17 +12,16 @@ use axum_server::tls_rustls::RustlsConfig;
 use migration::{Migrator, MigratorTrait};
 use oauth2::basic::BasicClient;
 
-use social_world_tour_core::sea_orm::{Database, DatabaseConnection};
-
+use crate::error::AppError;
+use axum::routing::get;
+use http::Method;
 use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
+use social_world_tour_core::sea_orm::{Database, DatabaseConnection};
 use std::path::PathBuf;
 use std::{env, net::SocketAddr};
+use tower_http::cors::{any, CorsLayer};
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use axum::{
-    routing::get,
-};
-use crate::error::AppError;
 
 #[derive(Clone, Copy)]
 struct Ports {
@@ -62,6 +61,12 @@ pub async fn start_server() -> Result<(), BoxError> {
         https: port.parse().unwrap(),
     };
 
+    let cors = CorsLayer::new()
+        // allow `GET` and `POST` when accessing the resource
+        .allow_methods(vec![Method::GET, Method::POST])
+        // allow requests from any origin
+        .allow_origin(any());
+
     tokio::spawn(redirect_http_to_https(ports));
 
     let conn = Database::connect(db_url)
@@ -73,7 +78,8 @@ pub async fn start_server() -> Result<(), BoxError> {
 
     let state = AppState { conn, oauth_client };
 
-    let app = api_router()
+    let app = api_router(state.clone())
+        .layer(CorsLayer::permissive())
         .nest_service(
             "/static",
             ServeDir::new(concat!(env!("CARGO_MANIFEST_DIR"), "/static")),
@@ -99,9 +105,10 @@ pub async fn start_server() -> Result<(), BoxError> {
     Ok(())
 }
 
-fn api_router() -> Router<AppState> {
-     Router::new()
-        .route("/", get(root)).merge(auth_router().merge(user_router().merge(health_router())))
+fn api_router(state: AppState) -> Router<AppState> {
+    Router::new()
+        .route("/", get(root))
+        .merge(auth_router().merge(user_router(state).merge(health_router())))
 }
 
 async fn root() -> &'static str {

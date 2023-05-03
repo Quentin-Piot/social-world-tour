@@ -1,3 +1,3 @@
 pub mod controller;
-mod models;
+pub(crate) mod models;
 mod service;
