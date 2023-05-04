@@ -1,9 +1,10 @@
-use crate::auth::models::{Claims, OAuthUser, KEYS};
-use crate::error::AppError;
-use jsonwebtoken::{encode, DecodingKey, EncodingKey, Header};
+use jsonwebtoken::{encode, Header};
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::{AuthorizationCode, TokenResponse};
+
+use crate::auth::models::{Claims, OAuthUser, KEYS};
+use crate::error::AppError;
 
 pub struct GenerateTokenResponse {
     pub token: String,
@@ -32,11 +33,12 @@ pub async fn generate_token_from_authorization_code(
         .await
         .unwrap();
 
+    let date_in_one_week = chrono::Utc::now() + chrono::Duration::days(7);
+
     let claims = Claims {
         sub: user_data.email.to_owned(),
         auth0_sub: user_data.sub.to_owned(),
-        // Mandatory expiry time as UTC timestamp
-        exp: 2000000000, // May 2033
+        exp: date_in_one_week.timestamp() as usize,
     };
 
     let token = encode(&Header::default(), &claims, &KEYS.encoding);

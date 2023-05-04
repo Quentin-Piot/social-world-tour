@@ -1,4 +1,4 @@
 pub mod controller;
 pub mod dto;
-mod errors;
+mod response;
 mod service;

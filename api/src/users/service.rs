@@ -1,12 +1,28 @@
-use crate::auth::models::{Claims, OAuthUser, KEYS};
-use axum::Json;
-use http::StatusCode;
-use jsonwebtoken::{decode, DecodingKey, Validation};
+use axum::headers::authorization::Bearer;
+use axum::headers::Authorization;
+use axum::middleware::Next;
+use axum::response::IntoResponse;
+use axum::TypedHeader;
+use http::Request;
+use jsonwebtoken::{decode, Validation};
 
-use crate::users::errors::UserError;
+use crate::auth::models::{Claims, KEYS};
+use crate::error::AppError;
 
-pub fn get_user_email_from_token(token: String) -> String {
-    let decoded = decode::<Claims>(&token, &KEYS.decoding, &Validation::default()).unwrap();
+pub async fn validate_user<B>(
+    TypedHeader(auth): TypedHeader<Authorization<Bearer>>,
+    mut request: Request<B>,
+    next: Next<B>,
+) -> Result<impl IntoResponse, AppError> {
+    let token = auth.token();
 
-    return decoded.claims.sub;
+    let claims = decode::<Claims>(token, &KEYS.decoding, &Validation::default())
+        .map_err(|_| AppError::WrongCredential)?
+        .claims;
+
+    let user_email = claims.sub;
+
+    request.extensions_mut().insert(user_email);
+
+    Ok(next.run(request).await)
 }

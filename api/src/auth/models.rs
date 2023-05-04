@@ -1,14 +1,15 @@
-use axum::extract::FromRequestParts;
-use jsonwebtoken::{decode, DecodingKey, EncodingKey, Validation};
-use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
-use crate::error::AppError;
+use axum::extract::FromRequestParts;
 use axum::headers::authorization::Bearer;
 use axum::headers::Authorization;
 use axum::{async_trait, RequestPartsExt, TypedHeader};
 use http::request::Parts;
+use jsonwebtoken::{decode, DecodingKey, EncodingKey, Validation};
 use once_cell::sync::Lazy;
+use serde::{Deserialize, Serialize};
+
+use crate::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OAuthUser {
@@ -57,12 +58,11 @@ where
     type Rejection = AppError;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        // Extract the token from the authorization header
         let TypedHeader(Authorization(bearer)) = parts
             .extract::<TypedHeader<Authorization<Bearer>>>()
             .await
             .map_err(|_| AppError::InvalidToken)?;
-        // Decode the user data
+
         let token_data = decode::<Claims>(bearer.token(), &KEYS.decoding, &Validation::default())
             .map_err(|_| AppError::InvalidToken)?;
 

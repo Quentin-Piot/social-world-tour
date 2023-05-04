@@ -1,4 +1,4 @@
-use axum::{extract::State, routing::get, Json, Router};
+use axum::{Json, Router, routing::get};
 use serde_json::{json, Value};
 
 use crate::error::AppError;

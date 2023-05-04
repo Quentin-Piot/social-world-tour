@@ -1,4 +1,4 @@
-use axum::{http::StatusCode, response::IntoResponse, Json};
+use axum::{http::StatusCode, Json, response::IntoResponse};
 use serde_json::json;
 
 #[derive(Debug)]
@@ -19,13 +19,13 @@ impl IntoResponse for AppError {
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "an internal server error occured",
             ),
-            Self::InvalidToken => (StatusCode::BAD_REQUEST, "invalid token"),
-            Self::MissingCredential => (StatusCode::BAD_REQUEST, "missing credential"),
-            Self::TokenCreation => (StatusCode::INTERNAL_SERVER_ERROR, "failed to create token"),
-            Self::WrongCredential => (StatusCode::UNAUTHORIZED, "wrong credentials"),
+            Self::InvalidToken => (StatusCode::BAD_REQUEST, "Invalid token"),
+            Self::MissingCredential => (StatusCode::BAD_REQUEST, "Missing credential"),
+            Self::TokenCreation => (StatusCode::INTERNAL_SERVER_ERROR, "Failed to create token"),
+            Self::WrongCredential => (StatusCode::UNAUTHORIZED, "Wrong credentials"),
             Self::UserDoesNotExist => (StatusCode::UNAUTHORIZED, "User does not exist"),
             Self::UserAlreadyExits => (StatusCode::BAD_REQUEST, "User already exists"),
         };
-        (status, Json(json!({ "error": err_msg }))).into_response()
+        (status, Json(json!({ "Error": err_msg }))).into_response()
     }
 }

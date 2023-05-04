@@ -1,85 +1,66 @@
-use crate::server::AppState;
+use std::env;
+
 use axum::extract::Query;
-use axum::response::{IntoResponse, Redirect};
+use axum::response::Redirect;
 use axum::{extract::State, routing::get, Json, Router};
 use chrono::Utc;
 use oauth2::basic::BasicClient;
 use oauth2::CsrfToken;
-use std::env;
+use serde::Deserialize;
 
-use crate::auth::models::Claims;
-use crate::auth::service::generate_token_from_authorization_code;
-use crate::error::AppError;
 use entity::users;
-use serde::{Deserialize, Serialize};
-
 use social_world_tour_core::users::Mutation as MutationCore;
 use social_world_tour_core::users::Query as QueryCore;
+
+use crate::auth::response::AuthorizeResponse;
+use crate::auth::service::generate_token_from_authorization_code;
+use crate::error::AppError;
+use crate::server::AppState;
 
 #[derive(Deserialize)]
 struct CallbackQuery {
     code: String,
 }
 
-#[derive(Debug, Serialize)]
-pub struct AuthBody {
-    access_token: String,
-    token_type: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct CallbackUrlBody {
-    callback_url: String,
-}
-
-impl AuthBody {
-    fn new(access_token: String) -> Self {
-        Self {
-            access_token,
-            token_type: "Bearer".to_string(),
-        }
-    }
-}
-
-impl CallbackUrlBody {
-    fn new(callback_url: String) -> Self {
-        Self { callback_url }
-    }
-}
-
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/auth", get(authorize))
         .route("/auth/authorized", get(callback))
-        .route("/protected", get(protected))
 }
 
-async fn protected(claims: Claims) -> Result<String, AppError> {
-    Ok(format!(
-        "Welcome to the protected area :)\nYour data:\n{}",
-        claims
-    ))
-}
 async fn authorize(
     State(oauth_client): State<BasicClient>,
-) -> Result<Json<CallbackUrlBody>, AppError> {
+) -> Result<Json<AuthorizeResponse>, AppError> {
     let (authorize_url, _csrf_state) = oauth_client.authorize_url(CsrfToken::new_random).url();
-    Ok(Json(CallbackUrlBody::new(authorize_url.to_string())))
+    let response = AuthorizeResponse {
+        callback_url: authorize_url.to_string(),
+    };
+    Ok(Json(response))
 }
 
-async fn callback(state: State<AppState>, query: Query<CallbackQuery>) -> impl IntoResponse {
+fn redirect_with_error(error: AppError) -> Redirect {
+    let frontend_url = env::var("FRONTEND_URL").expect("FRONTEND_URL is not set in .env file");
+    Redirect::to(format!("{}/auth/callback?error={:?}", frontend_url, error).as_str())
+}
+
+async fn callback(state: State<AppState>, query: Query<CallbackQuery>) -> Redirect {
+    let frontend_url = env::var("FRONTEND_URL").expect("FRONTEND_URL is not set in .env file");
+
     let callback_query: CallbackQuery = query.0;
     let token_response =
         generate_token_from_authorization_code(state.oauth_client.to_owned(), callback_query.code)
             .await
             .expect("Error generating token from authorization code");
-    let frontend_url = env::var("FRONTEND_URL").expect("FRONTEND_URL is not set in .env file");
 
     let user_data = token_response.user_data;
 
-    let user = QueryCore::find_user_by_email(&state.conn, &user_data.email)
-        .await
-        .expect("Error finding user");
+    let res = QueryCore::find_user_by_email(&state.conn, &user_data.email).await;
+
+    if res.is_err() {
+        return redirect_with_error(AppError::InternalServerError);
+    }
+
+    let user = res.unwrap();
 
     if user.is_none() {
         let given_name = match user_data.given_name {
@@ -95,8 +76,7 @@ async fn callback(state: State<AppState>, query: Query<CallbackQuery>) -> impl I
 
         let created_user = MutationCore::create_user(&state.conn, user_model).await;
         if created_user.is_err() {
-            println!("Error: {:?}", created_user);
-            return Redirect::to(format!("{}", frontend_url).as_str());
+            return redirect_with_error(AppError::InternalServerError);
         }
     }
 

@@ -1,12 +1,11 @@
+use crate::server::start_server;
+
 mod server;
 
 mod auth;
 mod error;
 mod health;
 mod users;
-
-use crate::server::start_server;
-use serde::{Deserialize, Serialize};
 
 #[tokio::main]
 pub async fn main() {

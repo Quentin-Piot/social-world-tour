@@ -1,27 +1,24 @@
-use crate::auth::controller::router as auth_router;
-use crate::health::controller::router as health_router;
-use crate::users::controller::router as user_router;
+use std::path::PathBuf;
+use std::{env, net::SocketAddr};
 
 use axum::extract::{FromRef, Host};
 use axum::handler::HandlerWithoutStateExt;
 use axum::http::{StatusCode, Uri};
-use axum::response::{IntoResponse, Redirect};
+use axum::response::Redirect;
 use axum::{BoxError, Router};
 use axum_server::tls_rustls::RustlsConfig;
-
-use migration::{Migrator, MigratorTrait};
 use oauth2::basic::BasicClient;
-
-use crate::error::AppError;
-use axum::routing::get;
-use http::Method;
 use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
-use social_world_tour_core::sea_orm::{Database, DatabaseConnection};
-use std::path::PathBuf;
-use std::{env, net::SocketAddr};
-use tower_http::cors::{any, CorsLayer};
+use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+use migration::{Migrator, MigratorTrait};
+use social_world_tour_core::sea_orm::{Database, DatabaseConnection};
+
+use crate::auth::controller::router as auth_router;
+use crate::health::controller::router as health_router;
+use crate::users::controller::router as user_router;
 
 #[derive(Clone, Copy)]
 struct Ports {
@@ -61,12 +58,6 @@ pub async fn start_server() -> Result<(), BoxError> {
         https: port.parse().unwrap(),
     };
 
-    let cors = CorsLayer::new()
-        // allow `GET` and `POST` when accessing the resource
-        .allow_methods(vec![Method::GET, Method::POST])
-        // allow requests from any origin
-        .allow_origin(any());
-
     tokio::spawn(redirect_http_to_https(ports));
 
     let conn = Database::connect(db_url)
@@ -74,11 +65,11 @@ pub async fn start_server() -> Result<(), BoxError> {
         .expect("Database connection failed");
     Migrator::up(&conn, None).await.unwrap();
 
-    let oauth_client = oauth_client();
+    let oauth_client = create_oauth_client();
 
     let state = AppState { conn, oauth_client };
 
-    let app = api_router(state.clone())
+    let app = api_router()
         .layer(CorsLayer::permissive())
         .nest_service(
             "/static",
@@ -105,14 +96,14 @@ pub async fn start_server() -> Result<(), BoxError> {
     Ok(())
 }
 
-fn api_router(state: AppState) -> Router<AppState> {
+fn api_router() -> Router<AppState> {
     Router::new()
-        .route("/", get(root))
-        .merge(auth_router().merge(user_router(state).merge(health_router())))
+        .merge(auth_router().merge(user_router().merge(health_router())))
+        .fallback(root)
 }
 
 async fn root() -> &'static str {
-    "Hello, World!"
+    "Social World Tour API"
 }
 
 async fn redirect_http_to_https(ports: Ports) {
@@ -150,7 +141,7 @@ async fn redirect_http_to_https(ports: Ports) {
         .unwrap();
 }
 
-fn oauth_client() -> BasicClient {
+fn create_oauth_client() -> BasicClient {
     let client_id = env::var("CLIENT_ID").expect("Missing CLIENT_ID!");
     let client_secret = env::var("CLIENT_SECRET").expect("Missing CLIENT_SECRET!");
     let redirect_url = env::var("REDIRECT_URL").expect("Missing REDIRECT_URL!");
