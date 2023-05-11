@@ -1,14 +1,14 @@
-use std::path::PathBuf;
 use std::{env, net::SocketAddr};
+use std::path::PathBuf;
 
+use axum::{BoxError, Router};
 use axum::extract::{FromRef, Host};
 use axum::handler::HandlerWithoutStateExt;
 use axum::http::{StatusCode, Uri};
 use axum::response::Redirect;
-use axum::{BoxError, Router};
 use axum_server::tls_rustls::RustlsConfig;
-use oauth2::basic::BasicClient;
 use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
+use oauth2::basic::BasicClient;
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -18,6 +18,7 @@ use social_world_tour_core::sea_orm::{Database, DatabaseConnection};
 
 use crate::auth::controller::router as auth_router;
 use crate::health::controller::router as health_router;
+use crate::teams::controller::router as team_router;
 use crate::users::controller::router as user_router;
 
 #[derive(Clone, Copy)]
@@ -69,7 +70,7 @@ pub async fn start_server() -> Result<(), BoxError> {
 
     let state = AppState { conn, oauth_client };
 
-    let app = api_router()
+    let app = api_router(state.clone())
         .layer(CorsLayer::permissive())
         .nest_service(
             "/static",
@@ -96,9 +97,14 @@ pub async fn start_server() -> Result<(), BoxError> {
     Ok(())
 }
 
-fn api_router() -> Router<AppState> {
+fn api_router(state: AppState) -> Router<AppState> {
     Router::new()
-        .merge(auth_router().merge(user_router().merge(health_router())))
+        .merge(
+            auth_router()
+                .merge(user_router(state.clone()))
+                .merge(health_router())
+                .merge(team_router(state)),
+        )
         .fallback(root)
 }
 

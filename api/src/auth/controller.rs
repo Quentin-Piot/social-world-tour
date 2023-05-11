@@ -3,17 +3,14 @@ use std::env;
 use axum::extract::Query;
 use axum::response::Redirect;
 use axum::{extract::State, routing::get, Json, Router};
-use chrono::Utc;
 use oauth2::basic::BasicClient;
 use oauth2::CsrfToken;
 use serde::Deserialize;
 
-use entity::users;
-use social_world_tour_core::users::Mutation as MutationCore;
-use social_world_tour_core::users::Query as QueryCore;
+use social_world_tour_core::users::Query as UserQueryCore;
 
 use crate::auth::response::AuthorizeResponse;
-use crate::auth::service::generate_token_from_authorization_code;
+use crate::auth::service::{create_user_and_team, generate_token_from_authorization_code};
 use crate::error::AppError;
 use crate::server::AppState;
 
@@ -54,29 +51,20 @@ async fn callback(state: State<AppState>, query: Query<CallbackQuery>) -> Redire
 
     let user_data = token_response.user_data;
 
-    let res = QueryCore::find_user_by_email(&state.conn, &user_data.email).await;
+    let res = UserQueryCore::find_user_by_email(&state.conn, &user_data.email).await;
 
     if res.is_err() {
-        return redirect_with_error(AppError::InternalServerError);
+        return redirect_with_error(AppError::InternalServerError(Some(
+            res.err().unwrap().to_string(),
+        )));
     }
 
     let user = res.unwrap();
 
     if user.is_none() {
-        let given_name = match user_data.given_name {
-            Some(name) => name,
-            None => user_data.email.to_owned(),
-        };
-        let user_model = users::Model {
-            email: user_data.email.to_owned(),
-            username: given_name,
-            created_at: Utc::now().naive_local(),
-            ..Default::default()
-        };
-
-        let created_user = MutationCore::create_user(&state.conn, user_model).await;
-        if created_user.is_err() {
-            return redirect_with_error(AppError::InternalServerError);
+        let creation_result = create_user_and_team(&state.conn, user_data).await;
+        if creation_result.is_err() {
+            return redirect_with_error(AppError::InternalServerError(None));
         }
     }
 

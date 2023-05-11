@@ -1,9 +1,9 @@
 use std::fmt::Display;
 
-use axum::extract::FromRequestParts;
-use axum::headers::authorization::Bearer;
-use axum::headers::Authorization;
 use axum::{async_trait, RequestPartsExt, TypedHeader};
+use axum::extract::FromRequestParts;
+use axum::headers::Authorization;
+use axum::headers::authorization::Bearer;
 use http::request::Parts;
 use jsonwebtoken::{decode, DecodingKey, EncodingKey, Validation};
 use once_cell::sync::Lazy;

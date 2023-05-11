@@ -13,5 +13,5 @@ pub fn router() -> Router<AppState> {
 async fn health_checker() -> Result<Json<Value>, AppError> {
     const MESSAGE: &str = "Ok";
 
-    Ok(Json(json!({"status": "success", "message": MESSAGE})))
+    Ok(Json(json!({"message": MESSAGE})))
 }

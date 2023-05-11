@@ -1,20 +1,18 @@
-use ::entity::{users, users::Entity as Users};
 use sea_orm::*;
+
+use ::entity::{users, users::Entity as Users};
 
 pub struct Mutation;
 
 impl Mutation {
-    pub async fn create_user(
-        db: &DbConn,
-        user_input: users::Model,
-    ) -> Result<users::ActiveModel, DbErr> {
+    pub async fn create_user(db: &DbConn, user_input: users::Model) -> Result<users::Model, DbErr> {
         users::ActiveModel {
             username: Set(user_input.username.to_owned()),
             email: Set(user_input.email.to_owned()),
             created_at: Set(user_input.created_at.to_owned()),
             ..Default::default()
         }
-        .save(db)
+        .insert(db)
         .await
     }
 

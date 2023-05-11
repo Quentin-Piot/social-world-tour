@@ -1,6 +1,7 @@
-use crate::m20230329_121826_create_user_table::Users;
-use crate::m20233030_121825_create_team_table::Team;
 use sea_orm_migration::prelude::*;
+
+use crate::m20230329_121826_create_user_table::Users;
+use crate::m20233030_121825_create_team_table::Teams;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -20,8 +21,12 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Nodes::Place).string().not_null())
-                    .col(ColumnDef::new(Nodes::Location).array(ColumnType::Unsigned))
+                    .col(ColumnDef::new(Nodes::CountryCode).string().not_null())
+                    .col(ColumnDef::new(Nodes::City).string().not_null())
+                    .col(ColumnDef::new(Nodes::Title).string().not_null())
+                    .col(ColumnDef::new(Nodes::Description).string())
+                    .col(ColumnDef::new(Nodes::Latitude).decimal().not_null())
+                    .col(ColumnDef::new(Nodes::Longitude).decimal().not_null())
                     .col(ColumnDef::new(Nodes::Team).integer().not_null())
                     .col(ColumnDef::new(Nodes::CreatedBy).integer().not_null())
                     .col(ColumnDef::new(Nodes::CreatedAt).timestamp().not_null())
@@ -29,7 +34,7 @@ impl MigrationTrait for Migration {
                         ForeignKeyCreateStatement::new()
                             .name("fk_node_team_team__id")
                             .from(Nodes::Table, Nodes::Team)
-                            .to(Team::Table, Team::Id),
+                            .to(Teams::Table, Teams::Id),
                     )
                     .foreign_key(
                         ForeignKeyCreateStatement::new()
@@ -53,8 +58,12 @@ impl MigrationTrait for Migration {
 pub enum Nodes {
     Table,
     Id,
-    Place,
-    Location,
+    Title,
+    Description,
+    CountryCode,
+    City,
+    Latitude,
+    Longitude,
     Team,
     CreatedBy,
     CreatedAt,

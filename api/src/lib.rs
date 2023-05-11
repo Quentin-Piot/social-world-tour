@@ -5,6 +5,7 @@ mod server;
 mod auth;
 mod error;
 mod health;
+mod teams;
 mod users;
 
 #[tokio::main]
