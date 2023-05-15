@@ -39,6 +39,7 @@ async fn create_team(
         .map_err(|err| AppError::InternalServerError(Some(err.to_string())))?;
 
     let team_response = TeamResponse {
+        id: team.id,
         name: team.name.to_owned(),
         logo: team.logo,
     };
@@ -55,6 +56,7 @@ pub async fn get_my_teams(
     let teams_response: Vec<TeamResponse> = teams_result
         .iter()
         .map(|team| TeamResponse {
+            id: team.to_owned().id,
             name: team.to_owned().name,
             logo: team.to_owned().logo,
         })

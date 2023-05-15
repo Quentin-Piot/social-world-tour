@@ -1,14 +1,14 @@
-use std::{env, net::SocketAddr};
 use std::path::PathBuf;
+use std::{env, net::SocketAddr};
 
-use axum::{BoxError, Router};
 use axum::extract::{FromRef, Host};
 use axum::handler::HandlerWithoutStateExt;
 use axum::http::{StatusCode, Uri};
 use axum::response::Redirect;
+use axum::{BoxError, Router};
 use axum_server::tls_rustls::RustlsConfig;
-use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 use oauth2::basic::BasicClient;
+use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -18,6 +18,7 @@ use social_world_tour_core::sea_orm::{Database, DatabaseConnection};
 
 use crate::auth::controller::router as auth_router;
 use crate::health::controller::router as health_router;
+use crate::nodes::controller::router as node_router;
 use crate::teams::controller::router as team_router;
 use crate::users::controller::router as user_router;
 
@@ -103,7 +104,8 @@ fn api_router(state: AppState) -> Router<AppState> {
             auth_router()
                 .merge(user_router(state.clone()))
                 .merge(health_router())
-                .merge(team_router(state)),
+                .merge(team_router(state.clone()))
+                .merge(node_router(state)),
         )
         .fallback(root)
 }

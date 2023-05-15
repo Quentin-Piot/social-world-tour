@@ -7,6 +7,7 @@ pub struct TeamsResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TeamResponse {
+    pub id: i32,
     pub name: Option<String>,
     pub logo: Option<String>,
 }
