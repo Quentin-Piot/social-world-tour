@@ -4,11 +4,11 @@ use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::{AuthorizationCode, TokenResponse};
 
-use entity::teams;
+use entity::trips;
 use entity::users;
 use migration::sea_orm::DbConn;
-use social_world_tour_core::teams::Mutation as TeamMutationCore;
-use social_world_tour_core::user_teams::Mutation as UserTeamsMutationCore;
+use social_world_tour_core::trips::Mutation as TripMutationCore;
+use social_world_tour_core::user_trips::Mutation as UserTripsMutationCore;
 use social_world_tour_core::users::Mutation as UserMutationCore;
 
 use crate::auth::models::{Claims, OAuthUser, KEYS};
@@ -60,7 +60,7 @@ pub async fn generate_token_from_authorization_code(
     Ok(token_response)
 }
 
-pub async fn create_user_and_team(conn: &DbConn, user_data: OAuthUser) -> Result<(), AppError> {
+pub async fn create_user_and_trip(conn: &DbConn, user_data: OAuthUser) -> Result<(), AppError> {
     let given_name = match user_data.given_name {
         Some(name) => name,
         None => user_data.email.to_owned(),
@@ -77,7 +77,7 @@ pub async fn create_user_and_team(conn: &DbConn, user_data: OAuthUser) -> Result
         .map_err(|err| AppError::InternalServerError(Some(err.to_string())))?;
 
     let created_user_id = created_user_result.id;
-    let team_model = teams::Model {
+    let trip_model = trips::Model {
         id: 0,
         name: None,
         logo: None,
@@ -85,11 +85,11 @@ pub async fn create_user_and_team(conn: &DbConn, user_data: OAuthUser) -> Result
         created_at: Utc::now().naive_local(),
     };
 
-    let created_team = TeamMutationCore::create_team(&conn, team_model)
+    let created_trip = TripMutationCore::create_trip(&conn, trip_model)
         .await
         .map_err(|err| AppError::InternalServerError(Some(err.to_string())))?;
 
-    UserTeamsMutationCore::create_user_teams(&conn, created_team.id, created_user_id)
+    UserTripsMutationCore::create_user_trips(&conn, created_trip.id, created_user_id)
         .await
         .map_err(|err| AppError::InternalServerError(Some(err.to_string())))?;
 

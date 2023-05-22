@@ -13,7 +13,7 @@ pub struct Model {
     pub description: Option<String>,
     pub latitude: Decimal,
     pub longitude: Decimal,
-    pub team: i32,
+    pub trip: i32,
     pub created_by: i32,
     pub created_at: DateTime,
 }
@@ -21,13 +21,13 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::teams::Entity",
-        from = "Column::Team",
-        to = "super::teams::Column::Id",
+        belongs_to = "super::trips::Entity",
+        from = "Column::Trip",
+        to = "super::trips::Column::Id",
         on_update = "NoAction",
         on_delete = "NoAction"
     )]
-    Teams,
+    Trips,
     #[sea_orm(
         belongs_to = "super::users::Entity",
         from = "Column::CreatedBy",
@@ -38,9 +38,9 @@ pub enum Relation {
     Users,
 }
 
-impl Related<super::teams::Entity> for Entity {
+impl Related<super::trips::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Teams.def()
+        Relation::Trips.def()
     }
 }
 

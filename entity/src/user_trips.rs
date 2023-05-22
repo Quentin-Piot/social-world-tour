@@ -3,25 +3,27 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
-#[sea_orm(table_name = "teams")]
+#[sea_orm(table_name = "user_trips")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    pub name: Option<String>,
-    pub logo: Option<String>,
-    pub created_by: i32,
-    pub created_at: DateTime,
+    pub user: i32,
+    pub trip: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::nodes::Entity")]
-    Nodes,
-    #[sea_orm(has_many = "super::user_teams::Entity")]
-    UserTeams,
+    #[sea_orm(
+        belongs_to = "super::trips::Entity",
+        from = "Column::Trip",
+        to = "super::trips::Column::Id",
+        on_update = "NoAction",
+        on_delete = "NoAction"
+    )]
+    Trips,
     #[sea_orm(
         belongs_to = "super::users::Entity",
-        from = "Column::CreatedBy",
+        from = "Column::User",
         to = "super::users::Column::Id",
         on_update = "NoAction",
         on_delete = "NoAction"
@@ -29,15 +31,9 @@ pub enum Relation {
     Users,
 }
 
-impl Related<super::nodes::Entity> for Entity {
+impl Related<super::trips::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Nodes.def()
-    }
-}
-
-impl Related<super::user_teams::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::UserTeams.def()
+        Relation::Trips.def()
     }
 }
 

@@ -13,7 +13,7 @@ impl Mutation {
             description: Set(node_input.description.to_owned()),
             latitude: Set(node_input.latitude.to_owned()),
             longitude: Set(node_input.longitude.to_owned()),
-            team: Set(node_input.team.to_owned()),
+            trip: Set(node_input.trip.to_owned()),
             created_by: Set(node_input.created_by),
             created_at: Set(node_input.created_at.to_owned()),
             ..Default::default()

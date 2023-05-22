@@ -11,23 +11,23 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Teams::Table)
+                    .table(Trips::Table)
                     .if_not_exists()
                     .col(
-                        ColumnDef::new(Teams::Id)
+                        ColumnDef::new(Trips::Id)
                             .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Teams::Name).string())
-                    .col(ColumnDef::new(Teams::Logo).string())
-                    .col(ColumnDef::new(Teams::CreatedBy).integer().not_null())
-                    .col(ColumnDef::new(Teams::CreatedAt).timestamp().not_null())
+                    .col(ColumnDef::new(Trips::Name).string())
+                    .col(ColumnDef::new(Trips::Logo).string())
+                    .col(ColumnDef::new(Trips::CreatedBy).integer().not_null())
+                    .col(ColumnDef::new(Trips::CreatedAt).timestamp().not_null())
                     .foreign_key(
                         ForeignKeyCreateStatement::new()
-                            .name("fk_team_create_by_user_id")
-                            .from(Teams::Table, Teams::CreatedBy)
+                            .name("fk_trip_create_by_user_id")
+                            .from(Trips::Table, Trips::CreatedBy)
                             .to(Users::Table, Users::Id),
                     )
                     .to_owned(),
@@ -37,14 +37,14 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Teams::Table).to_owned())
+            .drop_table(Table::drop().table(Trips::Table).to_owned())
             .await
     }
 }
 
 /// Learn more at https://docs.rs/sea-query#iden
 #[derive(Iden)]
-pub enum Teams {
+pub enum Trips {
     Table,
     Id,
     Name,

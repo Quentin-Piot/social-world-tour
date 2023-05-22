@@ -19,7 +19,7 @@ use social_world_tour_core::sea_orm::{Database, DatabaseConnection};
 use crate::auth::controller::router as auth_router;
 use crate::health::controller::router as health_router;
 use crate::nodes::controller::router as node_router;
-use crate::teams::controller::router as team_router;
+use crate::trips::controller::router as trip_router;
 use crate::users::controller::router as user_router;
 
 #[derive(Clone, Copy)]
@@ -104,7 +104,7 @@ fn api_router(state: AppState) -> Router<AppState> {
             auth_router()
                 .merge(user_router(state.clone()))
                 .merge(health_router())
-                .merge(team_router(state.clone()))
+                .merge(trip_router(state.clone()))
                 .merge(node_router(state)),
         )
         .fallback(root)

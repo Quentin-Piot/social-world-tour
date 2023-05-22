@@ -1,7 +1,7 @@
 use sea_orm_migration::prelude::*;
 
 use crate::m20230329_121826_create_user_table::Users;
-use crate::m20233030_121825_create_team_table::Teams;
+use crate::m20233030_121825_create_trip_table::Trips;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -27,14 +27,14 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Nodes::Description).string())
                     .col(ColumnDef::new(Nodes::Latitude).decimal().not_null())
                     .col(ColumnDef::new(Nodes::Longitude).decimal().not_null())
-                    .col(ColumnDef::new(Nodes::Team).integer().not_null())
+                    .col(ColumnDef::new(Nodes::Trip).integer().not_null())
                     .col(ColumnDef::new(Nodes::CreatedBy).integer().not_null())
                     .col(ColumnDef::new(Nodes::CreatedAt).timestamp().not_null())
                     .foreign_key(
                         ForeignKeyCreateStatement::new()
-                            .name("fk_node_team_team__id")
-                            .from(Nodes::Table, Nodes::Team)
-                            .to(Teams::Table, Teams::Id),
+                            .name("fk_node_trip_trip__id")
+                            .from(Nodes::Table, Nodes::Trip)
+                            .to(Trips::Table, Trips::Id),
                     )
                     .foreign_key(
                         ForeignKeyCreateStatement::new()
@@ -64,7 +64,7 @@ pub enum Nodes {
     City,
     Latitude,
     Longitude,
-    Team,
+    Trip,
     CreatedBy,
     CreatedAt,
 }

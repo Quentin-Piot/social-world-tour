@@ -7,9 +7,9 @@ use ::entity::prelude::Nodes;
 pub struct Query;
 
 impl Query {
-    pub async fn find_nodes_by_team_id(db: &DbConn, team_id: i32) -> Result<Vec<Model>, DbErr> {
+    pub async fn find_nodes_by_trip_id(db: &DbConn, trip_id: i32) -> Result<Vec<Model>, DbErr> {
         Nodes::find()
-            .filter(nodes::Column::Team.eq(team_id))
+            .filter(nodes::Column::Trip.eq(trip_id))
             .all(db)
             .await
     }

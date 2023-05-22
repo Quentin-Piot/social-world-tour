@@ -10,5 +10,5 @@ pub struct CreateNodeInput {
     pub description: Option<String>,
     pub latitude: Decimal,
     pub longitude: Decimal,
-    pub team: i32,
+    pub trip: i32,
 }

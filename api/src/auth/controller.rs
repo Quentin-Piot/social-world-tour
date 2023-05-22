@@ -10,7 +10,7 @@ use serde::Deserialize;
 use social_world_tour_core::users::Query as UserQueryCore;
 
 use crate::auth::response::AuthorizeResponse;
-use crate::auth::service::{create_user_and_team, generate_token_from_authorization_code};
+use crate::auth::service::{create_user_and_trip, generate_token_from_authorization_code};
 use crate::error::AppError;
 use crate::server::AppState;
 
@@ -62,7 +62,7 @@ async fn callback(state: State<AppState>, query: Query<CallbackQuery>) -> Redire
     let user = res.unwrap();
 
     if user.is_none() {
-        let creation_result = create_user_and_team(&state.conn, user_data).await;
+        let creation_result = create_user_and_trip(&state.conn, user_data).await;
         if creation_result.is_err() {
             return redirect_with_error(AppError::InternalServerError(None));
         }

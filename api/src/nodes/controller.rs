@@ -17,7 +17,7 @@ use crate::users::service::validate_user;
 pub fn router(state: AppState) -> Router<AppState> {
     Router::new()
         .route("/nodes", post(create_node))
-        .route("/nodes/team/:id", get(get_nodes_for_team))
+        .route("/nodes/trip/:id", get(get_nodes_for_trip))
         .route_layer(middleware::from_fn_with_state(state.clone(), validate_user))
         .with_state(state)
 }
@@ -35,7 +35,7 @@ async fn create_node(
         description: payload.description,
         latitude: payload.latitude,
         longitude: payload.longitude,
-        team: payload.team,
+        trip: payload.trip,
         created_by: user.id,
         created_at: Utc::now().naive_local(),
     };
@@ -56,11 +56,11 @@ async fn create_node(
     Ok(Json(node_response))
 }
 
-pub async fn get_nodes_for_team(
+pub async fn get_nodes_for_trip(
     state: State<AppState>,
     Path(id): Path<i32>,
 ) -> Result<Json<NodesResponse>, AppError> {
-    let nodes_result = QueryCore::find_nodes_by_team_id(&state.conn, id)
+    let nodes_result = QueryCore::find_nodes_by_trip_id(&state.conn, id)
         .await
         .map_err(|err| AppError::InternalServerError(Some(err.to_string())))?;
     let nodes_response: Vec<NodeResponse> = nodes_result

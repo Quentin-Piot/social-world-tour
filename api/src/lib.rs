@@ -6,7 +6,7 @@ mod auth;
 mod error;
 mod health;
 mod nodes;
-mod teams;
+mod trips;
 mod users;
 
 #[tokio::main]
